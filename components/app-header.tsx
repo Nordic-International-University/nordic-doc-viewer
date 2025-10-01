@@ -32,7 +32,6 @@ export function AppHeader() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/documents" className="flex items-center gap-2">
-              <Image src="/favicon.ico" alt="Logo" width={30} height={30}  />
               <span className="text-xl font-bold text-foreground">
                 O'qituvchi Hujjatlari
               </span>
@@ -49,6 +48,14 @@ export function AppHeader() {
           </div>
 
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="bg-red-800 w-full px-2 py-2 rounded-md text-white"
+            >
+              CHIQISH
+            </Button>
             <ThemeToggle />
 
             <DropdownMenu>
@@ -59,7 +66,7 @@ export function AppHeader() {
                 >
                   <Avatar className="h-10 w-10">
                     <AvatarImage
-                      src={user?.photo_url || "/placeholder-user.jpg"}
+                      src={user?.photo_url || "/favicon.ico"}
                       alt={user?.first_name}
                     />
                     <AvatarFallback>

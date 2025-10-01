@@ -136,10 +136,7 @@ export function DocumentsList() {
                         className="pl-10"
                     />
                 </div>
-                <Button className="flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
-                    Yangi hujjat yuklash
-                </Button>
+
             </div>
 
             {filteredDocuments.length === 0 ? (

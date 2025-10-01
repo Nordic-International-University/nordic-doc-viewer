@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   title: "O'qituvchi Hujjat Ko'rish - Teacher Document Preview",
   description: "O'qituvchilar uchun hujjatlarni ko'rish va boshqarish platformasi",
   generator: "v0.app",
+    icons: {
+        icon: "/favicon.ico",
+    },
 }
 
 export default function RootLayout({
