@@ -16,7 +16,7 @@ import {
 import { useRouter } from "next/navigation";
 import { Loader2, MessageSquare } from "lucide-react";
 import Cookie from "js-cookie";
-import {API_BASE_URL} from "@/lib/api";
+import { API_BASE_URL } from "@/lib/api";
 
 export function LoginForm() {
   const [code, setCode] = useState("");
@@ -95,13 +95,6 @@ export function LoginForm() {
             )}
           </Button>
         </form>
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>Telegram botdan kod olmadingizmi?</p>
-          <p className="mt-1">
-            <span className="font-medium">@TeacherDocBot</span> ga murojaat
-            qiling
-          </p>
-        </div>
       </CardContent>
     </Card>
   );

@@ -15,14 +15,13 @@ import { User, LogOut, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-
+import Cookies from "js-cookie";
 export function AppHeader() {
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("user_info");
+    Cookies.remove("auth_token");
     router.push("/");
   };
 
