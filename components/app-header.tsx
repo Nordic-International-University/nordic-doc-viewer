@@ -11,9 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { FileText, User, LogOut, Home } from "lucide-react";
+import { User, LogOut, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 export function AppHeader() {
   const [user, setUser] = useState<any>(null);
@@ -31,7 +32,7 @@ export function AppHeader() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/documents" className="flex items-center gap-2">
-              <FileText className="h-6 w-6 text-primary" />
+              <Image src="/favicon.ico" alt="Logo" width={30} height={30}  />
               <span className="text-xl font-bold text-foreground">
                 O'qituvchi Hujjatlari
               </span>
@@ -58,7 +59,7 @@ export function AppHeader() {
                 >
                   <Avatar className="h-10 w-10">
                     <AvatarImage
-                      src={user?.photo_url || "/placeholder.svg"}
+                      src={user?.photo_url || "/placeholder-user.jpg"}
                       alt={user?.first_name}
                     />
                     <AvatarFallback>

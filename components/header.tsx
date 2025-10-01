@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
-import { FileText, Menu } from "lucide-react"
+import { Menu } from "lucide-react"
+import Image from "next/image"
 
 export function Header() {
   return (
@@ -8,7 +9,7 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <FileText className="h-8 w-8 text-primary" />
+              <Image src="/placeholder-logo.svg" alt="Logo" width={32} height={32} />
               <span className="text-xl font-bold text-foreground">O'qituvchi Hujjat Ko'rish</span>
             </div>
           </div>
