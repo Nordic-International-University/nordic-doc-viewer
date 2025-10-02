@@ -226,7 +226,7 @@ export function FilePreview({ url, name, size }: FilePreviewProps) {
           onClick={onClose}
           className="absolute -top-12 right-0 text-white hover:text-gray-300 p-2 z-10"
         >
-          <X className="w-6 h-6" />
+          <X className="w-8 h-8" />
         </button>
         <div className="bg-white dark:bg-gray-900 rounded-lg max-w-screen-xl max-h-screen overflow-auto">
           {children}
@@ -267,7 +267,7 @@ export function FilePreview({ url, name, size }: FilePreviewProps) {
               size="sm"
               onClick={() => setIsFullscreen(true)}
             >
-              <Maximize2 className="h-4 w-4" />
+              <Maximize2 className="h-5 w-5" />
             </Button>
           )}
           <Button variant="outline" size="sm" asChild>
@@ -407,38 +407,52 @@ export function FilePreview({ url, name, size }: FilePreviewProps) {
   /* Видео */
   const videoTypes = ["mp4", "webm", "ogg", "avi", "mov", "wmv"];
   if (videoTypes.includes(ext)) {
-    return (
-      <Card className="w-full">
-        <FileHeader showFullscreen />
-        <CardContent>
-          <div className="relative">
-            <video
-              ref={videoRef}
-              src={url}
-              controls
-              className="w-full rounded-lg shadow-sm"
-              style={{ maxHeight: "600px" }}
-              onPlay={() => setIsVideoPlaying(true)}
-              onPause={() => setIsVideoPlaying(false)}
-              onEnded={() => setIsVideoPlaying(false)}
-              onError={() => console.error("Video loading error")}
+    const VideoContent = () => (
+      <div className="relative">
+        <video
+          ref={videoRef}
+          src={url}
+          controls
+          className="w-full rounded-lg shadow-sm"
+          style={{ maxHeight: isFullscreen ? "calc(100vh - 100px)" : "600px" }}
+          onPlay={() => setIsVideoPlaying(true)}
+          onPause={() => setIsVideoPlaying(false)}
+          onEnded={() => setIsVideoPlaying(false)}
+          onError={() => console.error("Video loading error")}
+        >
+          Brauzeringiz video faylni qo'llab-quvvatlamaydi.
+        </video>
+        {!isVideoPlaying && !isFullscreen && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => videoRef.current?.play()}
             >
-              Brauzeringiz video faylni qo'llab-quvvatlamaydi.
-            </video>
-            {!isVideoPlaying && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => videoRef.current?.play()}
-                >
-                  <Play className="h-12 w-12 text-white" />
-                </Button>
-              </div>
-            )}
+              <Play className="h-12 w-12 text-white" />
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
+    );
+
+    return (
+      <>
+        <Card className="w-full">
+          <FileHeader showFullscreen />
+          <CardContent>
+            <VideoContent />
+          </CardContent>
+        </Card>
+
+        {isFullscreen && (
+          <FullscreenModal onClose={() => setIsFullscreen(false)}>
+            <div className="p-4">
+              <VideoContent />
+            </div>
+          </FullscreenModal>
+        )}
+      </>
     );
   }
 
@@ -490,27 +504,41 @@ export function FilePreview({ url, name, size }: FilePreviewProps) {
     if (isLoading) return <LoadingState message="Fayl yuklanmoqda..." />;
     if (loadError) return <ErrorState message="Faylni ochib bo'lmadi." />;
 
+    const CodeContent = () => (
+      <div className="rounded-lg overflow-hidden border">
+        <SyntaxHighlighter
+          language={ext === "txt" ? "text" : ext}
+          showLineNumbers={true}
+          wrapLines={true}
+          customStyle={{
+            fontSize: "14px",
+            margin: 0,
+            borderRadius: "0",
+            maxHeight: isFullscreen ? "calc(100vh - 100px)" : "600px",
+          }}
+        >
+          {textContent || ""}
+        </SyntaxHighlighter>
+      </div>
+    );
+
     return (
-      <Card className="w-full">
-        <FileHeader showFullscreen />
-        <CardContent>
-          <div className="rounded-lg overflow-hidden border">
-            <SyntaxHighlighter
-              language={ext === "txt" ? "text" : ext}
-              showLineNumbers={true}
-              wrapLines={true}
-              customStyle={{
-                fontSize: "14px",
-                margin: 0,
-                borderRadius: "0",
-                maxHeight: "600px",
-              }}
-            >
-              {textContent || ""}
-            </SyntaxHighlighter>
-          </div>
-        </CardContent>
-      </Card>
+      <>
+        <Card className="w-full">
+          <FileHeader showFullscreen />
+          <CardContent>
+            <CodeContent />
+          </CardContent>
+        </Card>
+
+        {isFullscreen && (
+          <FullscreenModal onClose={() => setIsFullscreen(false)}>
+            <div className="p-4">
+              <CodeContent />
+            </div>
+          </FullscreenModal>
+        )}
+      </>
     );
   }
 
@@ -523,58 +551,74 @@ export function FilePreview({ url, name, size }: FilePreviewProps) {
     const headers = rows[0]?.split(",") || [];
     const dataRows = rows.slice(1);
 
-    return (
-      <Card className="w-full overflow-hidden">
-        <FileHeader showFullscreen />
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <FileSpreadsheet className="h-5 w-5 text-muted-foreground" />
-              <h4 className="font-semibold">CSV ma'lumotlari</h4>
-              <Badge variant="outline">{dataRows.length} qator</Badge>
-            </div>
-            <div className="rounded-lg border overflow-auto max-h-96">
-              <table className="w-full min-w-full">
-                <thead className="bg-muted sticky top-0">
-                  <tr>
-                    {headers.map((header, index) => (
-                      <th
-                        key={index}
-                        className="px-4 py-3 text-left text-sm font-semibold border-r last:border-r-0 whitespace-nowrap"
-                      >
-                        {header.trim()}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {dataRows.slice(0, 100).map((row, rowIndex) => (
-                    <tr key={rowIndex} className="border-t hover:bg-muted/50">
-                      {row.split(",").map((cell, cellIndex) => (
-                        <td
-                          key={cellIndex}
-                          className="px-4 py-2 text-sm border-r last:border-r-0 whitespace-nowrap"
-                        >
-                          {cell.trim()}
-                        </td>
-                      ))}
-                    </tr>
+    const CsvContent = () => (
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <FileSpreadsheet className="h-5 w-5 text-muted-foreground" />
+          <h4 className="font-semibold">CSV ma'lumotlari</h4>
+          <Badge variant="outline">{dataRows.length} qator</Badge>
+        </div>
+        <div
+          className="rounded-lg border overflow-auto"
+          style={{ maxHeight: isFullscreen ? "calc(100vh - 200px)" : "400px" }}
+        >
+          <table className="w-full min-w-full">
+            <thead className="bg-muted sticky top-0">
+              <tr>
+                {headers.map((header, index) => (
+                  <th
+                    key={index}
+                    className="px-4 py-3 text-left text-sm font-semibold border-r last:border-r-0 whitespace-nowrap"
+                  >
+                    {header.trim()}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {dataRows.slice(0, 100).map((row, rowIndex) => (
+                <tr key={rowIndex} className="border-t hover:bg-muted/50">
+                  {row.split(",").map((cell, cellIndex) => (
+                    <td
+                      key={cellIndex}
+                      className="px-4 py-2 text-sm border-r last:border-r-0 whitespace-nowrap"
+                    >
+                      {cell.trim()}
+                    </td>
                   ))}
-                </tbody>
-              </table>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {dataRows.length > 100 && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Faqat birinchi 100 qator ko'rsatildi. To'liq ma'lumot uchun
+              faylni yuklab oling.
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
+    );
+
+    return (
+      <>
+        <Card className="w-full overflow-hidden">
+          <FileHeader showFullscreen />
+          <CardContent>
+            <CsvContent />
+          </CardContent>
+        </Card>
+        {isFullscreen && (
+          <FullscreenModal onClose={() => setIsFullscreen(false)}>
+            <div className="p-4">
+              <CsvContent />
             </div>
-            {dataRows.length > 100 && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Faqat birinchi 100 qator ko'rsatildi. To'liq ma'lumot uchun
-                  faylni yuklab oling.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          </FullscreenModal>
+        )}
+      </>
     );
   }
 
@@ -592,36 +636,50 @@ export function FilePreview({ url, name, size }: FilePreviewProps) {
 
   const officeTypes = ["ppt", "pptx", "doc", "docx", "xls", "xlsx"];
   if (officeTypes.includes(ext)) {
-    const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+    const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(
+      url,
+    )}`;
+
+    const OfficeContent = () => (
+      <div className="space-y-4">
+        <Alert>
+          <FileText className="h-4 w-4" />
+          <AlertDescription>
+            Office faylini ko'rish uchun Microsoft Office Online ishlatilmoqda.
+          </AlertDescription>
+        </Alert>
+        <div
+          className="rounded-lg border overflow-hidden bg-gray-100"
+          style={{ height: isFullscreen ? "calc(100vh - 150px)" : "600px" }}
+        >
+          <iframe
+            src={officeUrl}
+            width="100%"
+            height="100%"
+            title={name}
+            className="border-0"
+            onError={() => console.error("Office iframe failed to load")}
+          />
+        </div>
+      </div>
+    );
 
     return (
-      <Card className="w-full">
-        <FileHeader showFullscreen />
-        <CardContent>
-          <div className="space-y-4">
-            <Alert>
-              <FileText className="h-4 w-4" />
-              <AlertDescription>
-                Office faylini ko'rish uchun Microsoft Office Online
-                ishlatilmoqda.
-              </AlertDescription>
-            </Alert>
-            <div
-              className="rounded-lg border overflow-hidden bg-gray-100"
-              style={{ height: "600px" }}
-            >
-              <iframe
-                src={officeUrl}
-                width="100%"
-                height="100%"
-                title={name}
-                className="border-0"
-                onError={() => console.error("Office iframe failed to load")}
-              />
+      <>
+        <Card className="w-full">
+          <FileHeader showFullscreen />
+          <CardContent>
+            <OfficeContent />
+          </CardContent>
+        </Card>
+        {isFullscreen && (
+          <FullscreenModal onClose={() => setIsFullscreen(false)}>
+            <div className="p-4">
+              <OfficeContent />
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </FullscreenModal>
+        )}
+      </>
     );
   }
 

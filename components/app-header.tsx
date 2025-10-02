@@ -38,9 +38,9 @@ export function AppHeader() {
             <nav className="hidden md:flex items-center gap-4">
               <Link
                 href="/documents"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-2 text-l text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Home className="h-4 w-4" />
+                <Home className="h-6 w-6" />
                 Hujjatlar
               </Link>
             </nav>

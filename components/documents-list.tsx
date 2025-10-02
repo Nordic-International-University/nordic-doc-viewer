@@ -17,23 +17,12 @@ import {
     FileSpreadsheet,
     Presentation,
     Search,
-    Upload,
 } from "lucide-react";
 import Link from "next/link";
-import Cookie from "js-cookie";
-import { API_BASE_URL } from "@/lib/api";
-
-interface Document {
-    id: string;
-    name: string;
-    type: string;
-    size: number;
-    created_at: string;
-    url: string;
-}
+import { apiClient, FileData } from "@/lib/api";
 
 export function DocumentsList() {
-    const [documents, setDocuments] = useState<Document[]>([]);
+    const [documents, setDocuments] = useState<FileData[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [isLoading, setIsLoading] = useState(true);
 
@@ -43,27 +32,9 @@ export function DocumentsList() {
 
     const fetchDocuments = async () => {
         try {
-            const token = Cookie.get("auth_token");
-            const response = await fetch(`${API_BASE_URL}api/files`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log("API data:", data);
-
-                const mappedDocs: Document[] = (data || []).map((file: any) => ({
-                    id: file.id,
-                    name: file.filename,
-                    type: file.fileType,
-                    size: file.size || 0,
-                    created_at: file.createdAt,
-                    url: file.fileUrl,
-                }));
-
-                setDocuments(mappedDocs);
+            const response = await apiClient.getFiles();
+            if (response.success) {
+                setDocuments(response.data || []);
             }
         } catch (error) {
             console.error("Error fetching documents:", error);
@@ -73,6 +44,7 @@ export function DocumentsList() {
     };
 
     const getFileIcon = (type: string) => {
+        if (!type) return <ImageIcon className="h-5 w-5 text-primary" />;
         if (type.includes("image"))
             return <ImageIcon className="h-5 w-5 text-blue-500" />;
         if (type.includes("video"))
@@ -85,6 +57,7 @@ export function DocumentsList() {
     };
 
     const getFileTypeLabel = (type: string) => {
+        if (!type) return "Hujjat";
         if (type.includes("image")) return "Rasm";
         if (type.includes("video")) return "Video";
         if (type.includes("spreadsheet") || type.includes("excel")) return "Excel";
@@ -106,7 +79,7 @@ export function DocumentsList() {
     };
 
     const filteredDocuments = documents.filter((doc) =>
-        doc.name.toLowerCase().includes(searchTerm.toLowerCase()),
+        doc.filename.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
     if (isLoading) {
@@ -159,11 +132,11 @@ export function DocumentsList() {
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                                         <div className="flex-shrink-0">
-                                            {getFileIcon(doc.type)}
+                                            {getFileIcon(doc.fileType)}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <CardTitle className="text-sm font-medium truncate" title={doc.name}>
-                                                {doc.name}
+                                            <CardTitle className="text-sm font-medium truncate" title={doc.filename}>
+                                                {doc.filename}
                                             </CardTitle>
                                             <CardDescription className="text-xs">
                                                 {formatFileSize(doc.size)}
@@ -171,24 +144,24 @@ export function DocumentsList() {
                                         </div>
                                     </div>
                                     <Badge variant="secondary" className="text-xs flex-shrink-0 whitespace-nowrap">
-                                        {getFileTypeLabel(doc.type)}
+                                        {getFileTypeLabel(doc.fileType)}
                                     </Badge>
                                 </div>
                             </CardHeader>
                             <CardContent className="pt-0">
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs text-muted-foreground">
-                                        {new Date(doc.created_at).toLocaleDateString("uz-UZ")}
+                                        {new Date(doc.createdAt).toLocaleDateString("uz-UZ")}
                                     </span>
                                     <Link
                                         href={{
                                             pathname: "/documents/view",
                                             query: {
-                                                name: doc.name,
-                                                type: doc.type,
-                                                url: doc.url,
+                                                name: doc.filename,
+                                                type: doc.fileType,
+                                                url: doc.fileUrl,
                                                 size: doc.size,
-                                                created: doc.created_at,
+                                                created: doc.createdAt,
                                             },
                                         }}
                                     >
