@@ -221,13 +221,13 @@ export function FilePreview({ url, name, size }: FilePreviewProps) {
     onClose: () => void;
   }) => (
     <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 z-50"
+      >
+        <X className="w-8 h-8" />
+      </button>
       <div className="relative max-w-full max-h-full overflow-auto">
-        <button
-          onClick={onClose}
-          className="absolute -top-12 right-0 text-white hover:text-gray-300 p-2 z-10"
-        >
-          <X className="w-8 h-8" />
-        </button>
         <div className="bg-white dark:bg-gray-900 rounded-lg max-w-screen-xl max-h-screen overflow-auto">
           {children}
         </div>
