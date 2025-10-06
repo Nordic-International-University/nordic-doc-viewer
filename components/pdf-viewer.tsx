@@ -99,13 +99,31 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, onClose }) => {
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
 
-        const viewport = page.getViewport({ scale: 1.5 });
+        // Динамический расчет масштаба в зависимости от размера экрана
+        const pixelRatio = window.devicePixelRatio || 1;
+        const screenWidth = window.innerWidth;
+
+        // Увеличиваем масштаб для больших экранов
+        let scale = 2.0; // базовый масштаб
+        if (screenWidth > 1920) {
+          scale = 3.5; // для 4K мониторов
+        } else if (screenWidth > 1440) {
+          scale = 3.0; // для 2K мониторов
+        } else if (screenWidth > 1024) {
+          scale = 2.5; // для Full HD мониторов
+        }
+
+        // Учитываем pixel ratio для Retina дисплеев
+        scale = scale * pixelRatio;
+
+        const viewport = page.getViewport({ scale });
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
         await page.render({ canvasContext: context, viewport }).promise;
 
-        const dataURL = canvas.toDataURL("image/jpeg", 0.85);
+        // Увеличиваем качество JPEG до 0.95 для лучшего качества
+        const dataURL = canvas.toDataURL("image/jpeg", 0.95);
         setCachedPages((prev) => ({ ...prev, [pageNum]: dataURL }));
       } catch (err) {
         console.error(`Ошибка рендеринга страницы ${pageNum}:`, err);
