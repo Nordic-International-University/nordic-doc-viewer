@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import JSZip from "jszip";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import {
   AlertCircle,
   Maximize2,
   X,
+  Edit,
 } from "lucide-react";
 import PDFViewer from "@/components/pdf-viewer";
 import { PptxViewer } from "@/components/ui/pptPrewiev";
@@ -47,6 +49,7 @@ type FilePreviewProps = {
   url: string;
   name: string;
   size?: number;
+  fileId?: string;
 };
 
 /* ───────── 3. Утилитарные функции ───────── */
@@ -135,9 +138,17 @@ const formatFileSize = (bytes?: number) => {
 };
 
 /* ───────── 4. Компонент ───────── */
-export function FilePreview({ url, name, size }: FilePreviewProps) {
+export function FilePreview({ url, name, size, fileId }: FilePreviewProps) {
   const ext = (name.split(".").pop() || "").toLowerCase();
   const FileIcon = getFileIcon(ext);
+  const router = useRouter();
+
+  // Список файлов, которые Collabora может открыть
+  const collaboraSupportedTypes = [
+    "doc", "docx", "ppt", "pptx", "xls", "xlsx",
+    "odt", "ods", "odp", // OpenDocument
+    "pdf", // PDF
+  ];
 
   const [zipEntries, setZipEntries] = useState<string[] | null>(null);
   const [textContent, setTextContent] = useState<string | null>(null);
@@ -145,6 +156,57 @@ export function FilePreview({ url, name, size }: FilePreviewProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  // Если файл поддерживается Collabora, автоматически перенаправляем в редактор
+  if (collaboraSupportedTypes.includes(ext)) {
+    if (fileId) {
+      // Автоматически перенаправляем в Collabora в режиме редактирования
+      useEffect(() => {
+        router.push(`/editor?id=${fileId}&name=${encodeURIComponent(name)}&mode=edit`);
+      }, []);
+
+      // Показываем индикатор загрузки во время перенаправления
+      return (
+        <Card className="w-full">
+          <CardContent className="py-12">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <p className="text-muted-foreground">Collabora Office ochilmoqda...</p>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Если нет fileId, показываем предупреждение
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between max-md:flex-col max-md:gap-4">
+            <div className="flex items-center gap-2 mt-1 justify-around max-md:flex-col">
+              <div className="rounded-lg bg-muted max-md:hidden">
+                <FileIcon className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <CardTitle className="text-lg font-semibold truncate">
+                {name}
+              </CardTitle>
+              <Badge variant="secondary" className={getFileTypeColor(ext)}>
+                {ext.toUpperCase()}
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Faylni ochish uchun fayl identifikatori kerak.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   /* ―― ZIP: читаем список файлов ―― */
   useEffect(() => {
@@ -238,54 +300,75 @@ export function FilePreview({ url, name, size }: FilePreviewProps) {
   /* ―― Компонент заголовка файла ―― */
   const FileHeader = ({
     showFullscreen = false,
+    showEditButton = false,
   }: {
     showFullscreen?: boolean;
-  }) => (
-    <CardHeader className="pb-4">
-      <div className="flex items-center justify-between max-md:flex-col max-md:gap-4">
-        <div className="flex items-center gap-2 mt-1 justify-around max-md:flex-col  ">
-          <div className=" rounded-lg bg-muted max-md:hidden">
-            <FileIcon className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <CardTitle className="text-lg font-semibold truncate">
-            {name}
-          </CardTitle>
-          <Badge variant="secondary" className={getFileTypeColor(ext)}>
-            {ext.toUpperCase()}
-          </Badge>
-          {size && (
-            <span className="text-sm text-muted-foreground">
-              {formatFileSize(size)}
-            </span>
-          )}
-        </div>
+    showEditButton?: boolean;
+  }) => {
+    const handleEdit = () => {
+      if (fileId) {
+        router.push(`/editor?id=${fileId}&name=${encodeURIComponent(name)}`);
+      }
+    };
 
-        <div className="flex space-x-2 flex-shrink-0">
-          {showFullscreen && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsFullscreen(true)}
-            >
-              <Maximize2 className="h-5 w-5" />
+    return (
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between max-md:flex-col max-md:gap-4">
+          <div className="flex items-center gap-2 mt-1 justify-around max-md:flex-col  ">
+            <div className=" rounded-lg bg-muted max-md:hidden">
+              <FileIcon className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <CardTitle className="text-lg font-semibold truncate">
+              {name}
+            </CardTitle>
+            <Badge variant="secondary" className={getFileTypeColor(ext)}>
+              {ext.toUpperCase()}
+            </Badge>
+            {size && (
+              <span className="text-sm text-muted-foreground">
+                {formatFileSize(size)}
+              </span>
+            )}
+          </div>
+
+          <div className="flex space-x-2 flex-shrink-0">
+            {showEditButton && fileId && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleEdit}
+                className="bg-[#387B66] hover:bg-[#2d6352]"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Tahrirlash
+              </Button>
+            )}
+            {showFullscreen && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFullscreen(true)}
+              >
+                <Maximize2 className="h-5 w-5" />
+              </Button>
+            )}
+            <Button variant="outline" size="sm" asChild>
+              <a href={url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Ochish
+              </a>
             </Button>
-          )}
-          <Button variant="outline" size="sm" asChild>
-            <a href={url} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Ochish
-            </a>
-          </Button>
-          <Button size="sm" asChild>
-            <a href={url} download={name}>
-              <Download className="h-4 w-4 mr-2" />
-              Yuklab olish
-            </a>
-          </Button>
+            <Button size="sm" asChild>
+              <a href={url} download={name}>
+                <Download className="h-4 w-4 mr-2" />
+                Yuklab olish
+              </a>
+            </Button>
+          </div>
         </div>
-      </div>
-    </CardHeader>
-  );
+      </CardHeader>
+    );
+  };
 
   /* ―― Компонент загрузки ―― */
   const LoadingState = ({ message }: { message: string }) => (
@@ -595,8 +678,8 @@ export function FilePreview({ url, name, size }: FilePreviewProps) {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Faqat birinchi 100 qator ko'rsatildi. To'liq ma'lumot uchun
-              faylni yuklab oling.
+              Faqat birinchi 100 qator ko'rsatildi. To'liq ma'lumot uchun faylni
+              yuklab oling.
             </AlertDescription>
           </Alert>
         )}
@@ -622,66 +705,7 @@ export function FilePreview({ url, name, size }: FilePreviewProps) {
     );
   }
 
-  const [showPdfViewer, setShowPdfViewer] = useState(true);
-  /* PDF fayllar */
-  if (ext === "pdf") {
-    return (
-      <div className="w-full h-full p-4 sm:p-8 md:p-12">
-        <div className="max-w-7xl mx-auto">
-          <PDFViewer url={url} onClose={() => setShowPdfViewer(false)} />
-        </div>
-      </div>
-    );
-  }
-
-  const officeTypes = ["ppt", "pptx", "doc", "docx", "xls", "xlsx"];
-  if (officeTypes.includes(ext)) {
-    const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(
-      url,
-    )}`;
-
-    const OfficeContent = () => (
-      <div className="space-y-4">
-        <Alert>
-          <FileText className="h-4 w-4" />
-          <AlertDescription>
-            Office faylini ko'rish uchun Microsoft Office Online ishlatilmoqda.
-          </AlertDescription>
-        </Alert>
-        <div
-          className="rounded-lg border overflow-hidden bg-gray-100"
-          style={{ height: isFullscreen ? "calc(100vh - 150px)" : "600px" }}
-        >
-          <iframe
-            src={officeUrl}
-            width="100%"
-            height="100%"
-            title={name}
-            className="border-0"
-            onError={() => console.error("Office iframe failed to load")}
-          />
-        </div>
-      </div>
-    );
-
-    return (
-      <>
-        <Card className="w-full">
-          <FileHeader showFullscreen />
-          <CardContent>
-            <OfficeContent />
-          </CardContent>
-        </Card>
-        {isFullscreen && (
-          <FullscreenModal onClose={() => setIsFullscreen(false)}>
-            <div className="p-4">
-              <OfficeContent />
-            </div>
-          </FullscreenModal>
-        )}
-      </>
-    );
-  }
+  // PDF и Office файлы теперь обрабатываются выше через Collabora
 
   return (
     <Card className="w-full">

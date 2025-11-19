@@ -10,10 +10,55 @@ export interface ApiResponse<T = any> {
 export interface FileData {
   id: string;
   filename: string;
-  fileType: string;
-  size: number;
+  originalName?: string;
+  size?: number;
+  mimeType?: string;
+  userId?: string;
   createdAt: string;
+  updatedAt?: string;
+  downloadUrl?: string;
   fileUrl: string;
+  fileType: string;
+  uploadedBy: string;
+  deletedAt?: string | null;
+}
+
+export interface PaginationData {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface FilesResponse {
+  files: FileData[];
+  pagination: PaginationData;
+}
+
+export interface UserProfile {
+  id: string;
+  fullname: string;
+  username: string;
+  isActive: boolean;
+  isAdmin: boolean;
+  telegramId: string;
+  avatarUrl: string | null;
+}
+
+export interface UsersResponse {
+  count: number;
+  pageNumber: number;
+  pageSize: number;
+  pageCount: number;
+  data: UserProfile[];
+}
+
+export interface WOPIEditorResponse {
+  wopiSrc: string;
+  accessToken: string;
+  fileId: string;
+  actionType?: string;
 }
 
 class ApiClient {
@@ -44,17 +89,71 @@ class ApiClient {
     }
   }
 
-  async getFiles(): Promise<ApiResponse<FileData[]>> {
+  async getFiles(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: "createdAt" | "updatedAt" | "filename" | "size";
+    sortOrder?: "asc" | "desc";
+  }): Promise<ApiResponse<FilesResponse>> {
     try {
-      const response = await fetch(`${API_BASE_URL}api/files`, {
+      const queryParams = new URLSearchParams();
+      if (params?.page) queryParams.append("page", params.page.toString());
+      if (params?.limit) queryParams.append("limit", params.limit.toString());
+      if (params?.search) queryParams.append("search", params.search);
+      if (params?.sortBy) queryParams.append("sortBy", params.sortBy);
+      if (params?.sortOrder) queryParams.append("sortOrder", params.sortOrder);
+
+      const url = `${API_BASE_URL}api/files${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+      console.log("Fetching files from:", url);
+
+      const response = await fetch(url, {
         headers: this.getAuthHeaders(),
       });
 
+      console.log("Response status:", response.status);
+
       if (response.ok) {
-        const data = await response.json();
-        console.log(data);
-        return { success: true, data: data || [] };
+        const rawData = await response.json();
+        console.log("Raw API response:", rawData);
+        console.log("Response structure check:", {
+          hasFiles: !!rawData.files,
+          hasPagination: !!rawData.pagination,
+          filesCount: rawData.files?.length || rawData.length,
+          dataKeys: Object.keys(rawData),
+          isArray: Array.isArray(rawData),
+        });
+
+        // Проверяем, какая структура пришла
+        let data: FilesResponse;
+
+        if (Array.isArray(rawData)) {
+          // Если пришел массив напрямую
+          console.log("Response is array, creating wrapper");
+          data = {
+            files: rawData,
+            pagination: {
+              currentPage: params?.page || 1,
+              totalPages: 1,
+              totalItems: rawData.length,
+              hasNext: false,
+              hasPrev: false,
+            },
+          };
+        } else if (rawData.files && Array.isArray(rawData.files)) {
+          // Если структура правильная
+          console.log("Response has correct structure");
+          data = rawData;
+        } else {
+          // Неизвестная структура
+          console.error("Unknown response structure:", rawData);
+          return { success: false, error: "Noto'g'ri ma'lumot formati" };
+        }
+
+        return { success: true, data };
       } else {
+        const errorText = await response.text();
+        console.error("API Error response:", errorText);
         return { success: false, error: "Fayllarni yuklashda xatolik" };
       }
     } catch (error) {
@@ -99,6 +198,119 @@ class ApiClient {
         return { success: false, error: "Fayl yuklashda xatolik" };
       }
     } catch (error) {
+      return { success: false, error: "Tarmoq xatosi" };
+    }
+  }
+
+  async getUserProfile(): Promise<ApiResponse<UserProfile>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}api/auth/profile`, {
+        headers: this.getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { success: true, data };
+      } else {
+        return {
+          success: false,
+          error: "Profil ma'lumotlarini yuklashda xatolik",
+        };
+      }
+    } catch (error) {
+      return { success: false, error: "Tarmoq xatosi" };
+    }
+  }
+
+  async getAllUsers(params?: {
+    pageNumber?: number;
+    pageSize?: number;
+    search?: string;
+  }): Promise<ApiResponse<UsersResponse>> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.pageNumber)
+        queryParams.append("pageNumber", params.pageNumber.toString());
+      if (params?.pageSize)
+        queryParams.append("pageSize", params.pageSize.toString());
+      if (params?.search) queryParams.append("search", params.search);
+
+      const url = `${API_BASE_URL}api/user/all${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+      const response = await fetch(url, {
+        headers: this.getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { success: true, data };
+      } else {
+        return {
+          success: false,
+          error: "Foydalanuvchilarni yuklashda xatolik",
+        };
+      }
+    } catch (error) {
+      return { success: false, error: "Tarmoq xatosi" };
+    }
+  }
+
+  async updateUser(
+    id: string,
+    userData: {
+      fullname?: string;
+      username?: string;
+      isActive?: boolean;
+      isAdmin?: boolean;
+      avatarUrl?: string | null;
+    },
+  ): Promise<ApiResponse<UserProfile>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}api/user/${id}`, {
+        method: "PATCH",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(userData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { success: true, data };
+      } else {
+        return { success: false, error: "Foydalanuvchini yangilashda xatolik" };
+      }
+    } catch (error) {
+      return { success: false, error: "Tarmoq xatosi" };
+    }
+  }
+
+  async getWOPIEditorUrl(
+    fileId: string,
+  ): Promise<ApiResponse<WOPIEditorResponse>> {
+    try {
+      const url = `${API_BASE_URL}api/wopi/editor/${fileId}`;
+      console.log("Fetching WOPI URL from:", url);
+
+      const response = await fetch(url, {
+        headers: this.getAuthHeaders(),
+      });
+
+      console.log("WOPI API Response status:", response.status);
+      console.log("WOPI API Response ok:", response.ok);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("WOPI API Response data:", data);
+        return { success: true, data };
+      } else {
+        const errorText = await response.text();
+        console.error("WOPI API Error response:", errorText);
+        console.error("WOPI API Error status:", response.status);
+        return {
+          success: false,
+          error: `Muharrir URL ni olishda xatolik (Status: ${response.status})`,
+        };
+      }
+    } catch (error) {
+      console.error("WOPI API Network error:", error);
       return { success: false, error: "Tarmoq xatosi" };
     }
   }
