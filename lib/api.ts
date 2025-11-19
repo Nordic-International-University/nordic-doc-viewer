@@ -105,31 +105,19 @@ class ApiClient {
       if (params?.sortOrder) queryParams.append("sortOrder", params.sortOrder);
 
       const url = `${API_BASE_URL}api/files${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
-      console.log("Fetching files from:", url);
 
       const response = await fetch(url, {
         headers: this.getAuthHeaders(),
       });
 
-      console.log("Response status:", response.status);
-
       if (response.ok) {
         const rawData = await response.json();
-        console.log("Raw API response:", rawData);
-        console.log("Response structure check:", {
-          hasFiles: !!rawData.files,
-          hasPagination: !!rawData.pagination,
-          filesCount: rawData.files?.length || rawData.length,
-          dataKeys: Object.keys(rawData),
-          isArray: Array.isArray(rawData),
-        });
 
         // Проверяем, какая структура пришла
         let data: FilesResponse;
 
         if (Array.isArray(rawData)) {
           // Если пришел массив напрямую
-          console.log("Response is array, creating wrapper");
           data = {
             files: rawData,
             pagination: {
@@ -142,18 +130,14 @@ class ApiClient {
           };
         } else if (rawData.files && Array.isArray(rawData.files)) {
           // Если структура правильная
-          console.log("Response has correct structure");
           data = rawData;
         } else {
           // Неизвестная структура
-          console.error("Unknown response structure:", rawData);
           return { success: false, error: "Noto'g'ri ma'lumot formati" };
         }
 
         return { success: true, data };
       } else {
-        const errorText = await response.text();
-        console.error("API Error response:", errorText);
         return { success: false, error: "Fayllarni yuklashda xatolik" };
       }
     } catch (error) {
@@ -287,30 +271,21 @@ class ApiClient {
   ): Promise<ApiResponse<WOPIEditorResponse>> {
     try {
       const url = `${API_BASE_URL}api/wopi/editor/${fileId}`;
-      console.log("Fetching WOPI URL from:", url);
 
       const response = await fetch(url, {
         headers: this.getAuthHeaders(),
       });
 
-      console.log("WOPI API Response status:", response.status);
-      console.log("WOPI API Response ok:", response.ok);
-
       if (response.ok) {
         const data = await response.json();
-        console.log("WOPI API Response data:", data);
         return { success: true, data };
       } else {
-        const errorText = await response.text();
-        console.error("WOPI API Error response:", errorText);
-        console.error("WOPI API Error status:", response.status);
         return {
           success: false,
           error: `Muharrir URL ni olishda xatolik (Status: ${response.status})`,
         };
       }
     } catch (error) {
-      console.error("WOPI API Network error:", error);
       return { success: false, error: "Tarmoq xatosi" };
     }
   }

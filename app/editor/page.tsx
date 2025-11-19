@@ -31,44 +31,29 @@ const EditorPage = () => {
     setError(null);
 
     try {
-      console.log("Loading WOPI data for file:", fileId, "mode:", mode);
       const response = await apiClient.getWOPIEditorUrl(fileId);
 
       if (response.success && response.data) {
-        console.log("WOPI Data received:", response.data);
         setWopiData(response.data);
       } else {
-        console.error("WOPI Error:", response.error);
         setError(response.error || "WOPI ma'lumotlarini yuklashda xatolik");
       }
     } catch (err) {
-      console.error("Error loading WOPI data:", err);
       setError("Xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  console.log(wopiData, "WOPI data");
-
   useEffect(() => {
     if (wopiData && iframeRef.current) {
-      // 🔧 ИСПРАВЛЕНО: Формируем WOPI_SRC с токеном И permission
       const permission = mode === "edit" ? "edit" : "view";
-      console.log(wopiData.accessToken, "accessToken");
       const WOPI_SRC = `${wopiData.wopiSrc}?access_token=${wopiData.accessToken}&permission=${permission}`;
-
-      // Формируем URL для Collabora Office
       const COLLABORA_URL = `https://present-office.nordicuniversity.org/browser/e808afa229/cool.html?WOPISrc=${encodeURIComponent(WOPI_SRC)}`;
 
-      console.log("🔑 Mode:", mode);
-      console.log("📄 WOPI_SRC:", WOPI_SRC);
-      console.log("🌐 Collabora URL:", COLLABORA_URL);
-
-      // Устанавливаем URL в iframe
       iframeRef.current.src = COLLABORA_URL;
     }
-  }, [wopiData, mode]); // Добавили mode в зависимости
+  }, [wopiData, mode]);
 
   const handleGoBack = () => {
     router.back();
@@ -162,15 +147,6 @@ const EditorPage = () => {
               </h2>
             </div>
           </div>
-        </div>
-
-        {/* Info Alert */}
-        <div className="px-4 pb-3 max-w-screen-2xl mx-auto">
-          <Alert className="py-2">
-            <AlertDescription className="text-sm">
-              Collabora Office muharriri. Barcha o'zgarishlar avtomatik saqlanadi.
-            </AlertDescription>
-          </Alert>
         </div>
       </div>
 

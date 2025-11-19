@@ -52,21 +52,15 @@ export function DocumentsList() {
                 sortOrder,
             });
 
-            console.log("API Response:", response);
-
             if (response.success && response.data) {
-                console.log("Files received:", response.data.files);
-                console.log("Pagination:", response.data.pagination);
                 setDocuments(response.data.files || []);
                 setPagination(response.data.pagination);
             } else {
-                console.error("API Error:", response.error);
                 setError(response.error || "Fayllarni yuklashda xatolik");
                 setDocuments([]);
                 setPagination(null);
             }
         } catch (error) {
-            console.error("Error fetching documents:", error);
             setError("Tarmoq xatosi");
             setDocuments([]);
             setPagination(null);
@@ -157,30 +151,6 @@ export function DocumentsList() {
 
     return (
         <div className="space-y-6">
-            {/* DEBUG INFO - Удалите после отладки */}
-            <Card className="bg-yellow-50 border-yellow-200">
-                <CardHeader>
-                    <CardTitle className="text-sm">🐛 Debug Information</CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs space-y-1">
-                    <p><strong>Documents count:</strong> {documents.length}</p>
-                    <p><strong>Is loading:</strong> {isLoading ? 'Yes' : 'No'}</p>
-                    <p><strong>Error:</strong> {error || 'None'}</p>
-                    <p><strong>Has pagination:</strong> {pagination ? 'Yes' : 'No'}</p>
-                    {pagination && (
-                        <p><strong>Pagination:</strong> Page {pagination.currentPage}/{pagination.totalPages}, Total: {pagination.totalItems}</p>
-                    )}
-                    {documents.length > 0 && (
-                        <details>
-                            <summary className="cursor-pointer font-semibold">First file data</summary>
-                            <pre className="mt-2 p-2 bg-white rounded text-xs overflow-auto">
-                                {JSON.stringify(documents[0], null, 2)}
-                            </pre>
-                        </details>
-                    )}
-                </CardContent>
-            </Card>
-
             {error && (
                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
